@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Battle Royale Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: white;
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        #gameContainer {
+            text-align: center;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 40px;
+            border-radius: 15px;
+            border: 2px solid #4cc9f0;
+            box-shadow: 0 0 30px rgba(76, 201, 240, 0.3);
+        }
+        
+        h1 {
+            font-size: 3em;
+            margin-bottom: 20px;
+            background: linear-gradient(45deg, #4cc9f0, #f72585);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        button {
+            background: linear-gradient(45deg, #f72585, #4cc9f0);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            margin: 20px 0;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(247, 37, 133, 0.4);
+        }
+        
+        #gameCanvas {
+            border: 3px solid #4cc9f0;
+            border-radius: 10px;
+            background: #0f172a;
+            margin-top: 20px;
+        }
+        
+        .instructions {
+            margin-top: 20px;
+            font-size: 14px;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <h1>🎮 Battle Royale</h1>
+        <div class="input-group">
+            <input type="text" id="playerName" placeholder="Enter your name" maxlength="15" 
+                   style="padding: 12px 20px; font-size: 16px; border: 2px solid #4cc9f0; border-radius: 25px; background: rgba(255, 255, 255, 0.1); color: white; text-align: center; width: 250px; margin: 10px;">
+        </div>
+        <button id="startBtn">Join Battle</button>
+        
+        <div class="server-status">
+            <div>Status: <span id="serverStatus" style="color: #4ade80;">Ready to Play</span></div>
+            <div>Players Online: <span id="playerCount">0</span></div>
+        </div>
+        
+        <div class="instructions">
+            <h3>Controls:</h3>
+            <p>WASD - Move | Click - Shoot | Stay in the safe zone!</p>
+        </div>
+        
+        <canvas id="gameCanvas" width="800" height="600" style="display: none;"></canvas>
+    </div>
+
+    <script>
+        class BattleRoyaleGame {
+            constructor() {
+                this.canvas = document.getElementById('gameCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.gameState = 'menu';
+                this.players = [];
+                this.safeZone = { x: 400, y: 300, radius: 300 };
+                
+                this.setupEventListeners();
+            }
+            
+            setupEventListeners() {
+                document.getElementById('startBtn').addEventListener('click', () => {
+                    this.startGame();
+                });
+                
+                // Keyboard controls
+                document.addEventListener('keydown', (e) => {
+                    if (this.gameState === 'playing') {
+                        this.handleInput(e.key, true);
+                    }
+                });
+                
+                document.addEventListener('keyup', (e) => {
+                    if (this.gameState === 'playing') {
+                        this.handleInput(e.key, false);
+                    }
+                });
+            }
+            
+            startGame() {
+                const playerName = document.getElementById('playerName').value || 'Player';
+                document.getElementById('gameCanvas').style.display = 'block';
+                document.querySelector('.input-group').style.display = 'none';
+                document.getElementById('startBtn').style.display = 'none';
+                document.querySelector('.instructions').innerHTML = '<p>Game Started! Use WASD to move and click to shoot!</p>';
+                
+                this.gameState = 'playing';
+                this.createPlayer(playerName);
+                this.gameLoop();
+            }
+            
+            createPlayer(name) {
+                this.player = {
+                    x: Math.random() * 700,
+                    y: Math.random() * 500,
+                    width: 30,
+                    height: 30,
+                    speed: 5,
+                    health: 100,
+                    color: '#4cc9f0',
+                    name: name,
+                    keys: { w: false, a: false, s: false, d: false }
+                };
+                
+                // Add some bot players
+                for (let i = 0; i < 5; i++) {
+                    this.players.push({
+                        x: Math.random() * 700,
+                        y: Math.random() * 500,
+                        width: 30,
+                        height: 30,
+                        color: '#f72585',
+                        name: 'Bot' + i,
+                        health: 100
+                    });
+                }
+            }
+            
+            handleInput(key, isPressed) {
+                const keyMap = {
+                    'w': 'w', 'a': 'a', 's': 's', 'd': 'd',
+                    'ArrowUp': 'w', 'ArrowLeft': 'a', 'ArrowDown': 's', 'ArrowRight': 'd'
+                };
+                
+                const action = keyMap[key.toLowerCase()];
+                if (action && this.player) {
+                    this.player.keys[action] = isPressed;
+                }
+            }
+            
+            update() {
+                if (this.player) {
+                    // Move player
+                    if (this.player.keys.w) this.player.y -= this.player.speed;
+                    if (this.player.keys.s) this.player.y += this.player.speed;
+                    if (this.player.keys.a) this.player.x -= this.player.speed;
+                    if (this.player.keys.d) this.player.x += this.player.speed;
+                    
+                    // Keep in bounds
+                    this.player.x = Math.max(0, Math.min(770, this.player.x));
+                    this.player.y = Math.max(0, Math.min(570, this.player.y));
+                    
+                    // Update player count display
+                    document.getElementById('playerCount').textContent = this.players.length + 1;
+                }
+            }
+            
+            render() {
+                // Clear canvas
+                this.ctx.fillStyle = '#0f172a';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Draw safe zone
+                this.ctx.strokeStyle = 'rgba(76, 201, 240, 0.3)';
+                this.ctx.lineWidth = 3;
+                this.ctx.beginPath();
+                this.ctx.arc(this.safeZone.x, this.safeZone.y, this.safeZone.radius, 0, Math.PI * 2);
+                this.ctx.stroke();
+                
+                // Draw players
+                if (this.player) {
+                    this.drawPlayer(this.player);
+                }
+                
+                this.players.forEach(player => {
+                    this.drawPlayer(player);
+                });
+                
+                // Draw HUD
+                this.ctx.fillStyle = 'white';
+                this.ctx.font = '16px Arial';
+                this.ctx.fillText(`Health: ${this.player ? this.player.health : 100}%`, 10, 30);
+                this.ctx.fillText(`Players: ${this.players.length + 1}`, 10, 60);
+            }
+            
+            drawPlayer(player) {
+                // Player body
+                this.ctx.fillStyle = player.color;
+                this.ctx.fillRect(player.x, player.y, player.width, player.height);
+                
+                // Player name
+                this.ctx.fillStyle = 'white';
+                this.ctx.font = '12px Arial';
+                this.ctx.fillText(player.name, player.x, player.y - 10);
+                
+                // Health bar
+                this.ctx.fillStyle = 'red';
+                this.ctx.fillRect(player.x, player.y - 5, player.width, 3);
+                this.ctx.fillStyle = 'green';
+                this.ctx.fillRect(player.x, player.y - 5, (player.width * player.health) / 100, 3);
+            }
+            
+            gameLoop() {
+                this.update();
+                this.render();
+                
+                if (this.gameState === 'playing') {
+                    requestAnimationFrame(() => this.gameLoop());
+                }
+            }
+        }
+        
+        // Start the game when page loads
+        window.addEventListener('load', () => {
+            new BattleRoyaleGame();
+        });
+    </script>
+</body>
+</html>
