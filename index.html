@@ -1,5 +1,5 @@
 
-         <!DOCTYPE html>
+          <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -163,6 +163,7 @@
                 this.ctx = this.canvas.getContext('2d');
                 this.gameState = 'menu';
                 this.players = [];
+                this.bullets = [];
                 this.safeZone = { x: 400, y: 300, radius: 300 };
                 this.keys = { w: false, a: false, s: false, d: false };
                 this.isTouchDevice = 'ontouchstart' in window;
@@ -198,7 +199,7 @@
                     }
                 });
                 
-                // Touch shooting
+                // Touch shooting on canvas
                 this.canvas.addEventListener('touchstart', (e) => {
                     if (this.gameState === 'playing') {
                         e.preventDefault();
@@ -206,67 +207,82 @@
                         const rect = this.canvas.getBoundingClientRect();
                         const x = touch.clientX - rect.left;
                         const y = touch.clientY - rect.top;
-                        this.shoot(x, y);
+                        this.shootAt(x, y);
                     }
                 });
             }
             
             setupTouchControls() {
-                // FIXED: Correct button mapping
-                const touchControls = [
-                    { id: 'upBtn', key: 'w' },
-                    { id: 'leftBtn', key: 'a' },
-                    { id: 'downBtn', key: 's' },
-                    { id: 'rightBtn', key: 'd' }
-                ];
+                console.log("Setting up touch controls...");
                 
-                touchControls.forEach(control => {
-                    const btn = document.getElementById(control.id);
-                    
-                    // Touch start
-                    btn.addEventListener('touchstart', (e) => {
-                        e.preventDefault();
-                        this.keys[control.key] = true;
-                    });
-                    
-                    // Touch end
-                    btn.addEventListener('touchend', (e) => {
-                        e.preventDefault();
-                        this.keys[control.key] = false;
-                    });
-                    
-                    // Also handle mouse events for testing
-                    btn.addEventListener('mousedown', (e) => {
-                        e.preventDefault();
-                        this.keys[control.key] = true;
-                    });
-                    
-                    btn.addEventListener('mouseup', (e) => {
-                        e.preventDefault();
-                        this.keys[control.key] = false;
-                    });
-                    
-                    btn.addEventListener('mouseleave', (e) => {
-                        this.keys[control.key] = false;
-                    });
+                // Movement buttons
+                const upBtn = document.getElementById('upBtn');
+                const leftBtn = document.getElementById('leftBtn');
+                const downBtn = document.getElementById('downBtn');
+                const rightBtn = document.getElementById('rightBtn');
+                const shootBtn = document.getElementById('shootBtn');
+                
+                // Up button
+                upBtn.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    console.log("Up pressed");
+                    this.keys.w = true;
+                });
+                upBtn.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    this.keys.w = false;
+                });
+                
+                // Left button
+                leftBtn.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    console.log("Left pressed");
+                    this.keys.a = true;
+                });
+                leftBtn.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    this.keys.a = false;
+                });
+                
+                // Down button
+                downBtn.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    console.log("Down pressed");
+                    this.keys.s = true;
+                });
+                downBtn.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    this.keys.s = false;
+                });
+                
+                // Right button - FIXED
+                rightBtn.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    console.log("Right pressed");
+                    this.keys.d = true;
+                });
+                rightBtn.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    this.keys.d = false;
                 });
                 
                 // Shoot button - FIXED
-                document.getElementById('shootBtn').addEventListener('touchstart', (e) => {
+                shootBtn.addEventListener('touchstart', (e) => {
                     e.preventDefault();
-                    if (this.player) {
-                        // Shoot straight ahead
-                        this.shoot(this.player.x + this.player.width, this.player.y + this.player.height / 2);
-                    }
+                    console.log("Shoot pressed");
+                    this.shootForward();
                 });
                 
-                // Also handle mouse for shoot button
-                document.getElementById('shootBtn').addEventListener('mousedown', (e) => {
-                    e.preventDefault();
-                    if (this.player) {
-                        this.shoot(this.player.x + this.player.width, this.player.y + this.player.height / 2);
-                    }
-                });
+                // Also add mouse events for testing
+                upBtn.addEventListener('mousedown', () => this.keys.w = true);
+                upBtn.addEventListener('mouseup', () => this.keys.w = false);
+                leftBtn.addEventListener('mousedown', () => this.keys.a = true);
+                leftBtn.addEventListener('mouseup', () => this.keys.a = false);
+                downBtn.addEventListener('mousedown', () => this.keys.s = true);
+                downBtn.addEventListener('mouseup', () => this.keys.s = false);
+                rightBtn.addEventListener('mousedown', () => this.keys.d = true);
+                rightBtn.addEventListener('mouseup', () => this.keys.d = false);
+                shootBtn.addEventListener('mousedown', () => this.shootForward());
             }
             
             startGame() {
@@ -323,33 +339,60 @@
                 }
             }
             
-            shoot(targetX, targetY) {
+            shootForward() {
                 if (this.player) {
-                    console.log('Shooting!');
-                    // Add shooting effect at player position
-                    this.ctx.fillStyle = '#ffff00';
-                    this.ctx.beginPath();
-                    this.ctx.arc(this.player.x + this.player.width/2, this.player.y + this.player.height/2, 8, 0, Math.PI * 2);
-                    this.ctx.fill();
+                    console.log("Shooting forward!");
+                    // Create a bullet that goes right
+                    const bullet = {
+                        x: this.player.x + this.player.width,
+                        y: this.player.y + this.player.height / 2,
+                        width: 10,
+                        height: 5,
+                        speed: 8,
+                        color: '#ffff00'
+                    };
+                    this.bullets.push(bullet);
                     
-                    // Draw bullet trail
-                    this.ctx.strokeStyle = '#ff9900';
-                    this.ctx.lineWidth = 3;
-                    this.ctx.beginPath();
-                    this.ctx.moveTo(this.player.x + this.player.width/2, this.player.y + this.player.height/2);
-                    this.ctx.lineTo(targetX, targetY);
-                    this.ctx.stroke();
-                    
-                    // Clear after short time
+                    // Remove bullet after 2 seconds
                     setTimeout(() => {
-                        this.render();
-                    }, 200);
+                        const index = this.bullets.indexOf(bullet);
+                        if (index > -1) {
+                            this.bullets.splice(index, 1);
+                        }
+                    }, 2000);
+                }
+            }
+            
+            shootAt(targetX, targetY) {
+                if (this.player) {
+                    console.log("Shooting at:", targetX, targetY);
+                    // Create a bullet towards the target
+                    const angle = Math.atan2(targetY - (this.player.y + this.player.height/2), 
+                                            targetX - (this.player.x + this.player.width/2));
+                    const bullet = {
+                        x: this.player.x + this.player.width/2,
+                        y: this.player.y + this.player.height/2,
+                        width: 8,
+                        height: 8,
+                        speed: 8,
+                        angle: angle,
+                        color: '#ffff00'
+                    };
+                    this.bullets.push(bullet);
+                    
+                    // Remove bullet after 2 seconds
+                    setTimeout(() => {
+                        const index = this.bullets.indexOf(bullet);
+                        if (index > -1) {
+                            this.bullets.splice(index, 1);
+                        }
+                    }, 2000);
                 }
             }
             
             update() {
                 if (this.player) {
-                    // Move player based on keys or touch - FIXED DIRECTIONS
+                    // Move player based on keys or touch
                     if (this.keys.w) this.player.y -= this.player.speed;
                     if (this.keys.s) this.player.y += this.player.speed;
                     if (this.keys.a) this.player.x -= this.player.speed;
@@ -367,6 +410,24 @@
                     const zonePercent = Math.round((this.safeZone.radius / 300) * 100);
                     document.getElementById('safeZone').textContent = `${zonePercent}%`;
                 }
+                
+                // Update bullets
+                this.bullets.forEach(bullet => {
+                    if (bullet.angle) {
+                        // Directional bullet
+                        bullet.x += Math.cos(bullet.angle) * bullet.speed;
+                        bullet.y += Math.sin(bullet.angle) * bullet.speed;
+                    } else {
+                        // Forward bullet (right direction)
+                        bullet.x += bullet.speed;
+                    }
+                });
+                
+                // Remove bullets that are off screen
+                this.bullets = this.bullets.filter(bullet => 
+                    bullet.x < this.canvas.width && bullet.x > 0 && 
+                    bullet.y < this.canvas.height && bullet.y > 0
+                );
                 
                 // Move bots randomly
                 this.players.forEach(bot => {
@@ -392,6 +453,12 @@
                 this.ctx.beginPath();
                 this.ctx.arc(this.safeZone.x, this.safeZone.y, this.safeZone.radius, 0, Math.PI * 2);
                 this.ctx.stroke();
+                
+                // Draw bullets
+                this.bullets.forEach(bullet => {
+                    this.ctx.fillStyle = bullet.color;
+                    this.ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+                });
                 
                 // Draw players
                 if (this.player) {
