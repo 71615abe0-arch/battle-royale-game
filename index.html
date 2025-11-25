@@ -1,11 +1,10 @@
 
-       
-        <!DOCTYPE html>
+         <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Battle Royale - iPad Version</title>
+    <title>Battle Royale - iPad Fixed</title>
     <style>
         * {
             margin: 0;
@@ -213,29 +212,60 @@
             }
             
             setupTouchControls() {
-                const touchButtons = ['upBtn', 'leftBtn', 'downBtn', 'rightBtn'];
+                // FIXED: Correct button mapping
+                const touchControls = [
+                    { id: 'upBtn', key: 'w' },
+                    { id: 'leftBtn', key: 'a' },
+                    { id: 'downBtn', key: 's' },
+                    { id: 'rightBtn', key: 'd' }
+                ];
                 
-                touchButtons.forEach(btnId => {
-                    const btn = document.getElementById(btnId);
-                    const key = btnId.replace('Btn', '').charAt(0);
+                touchControls.forEach(control => {
+                    const btn = document.getElementById(control.id);
                     
                     // Touch start
                     btn.addEventListener('touchstart', (e) => {
                         e.preventDefault();
-                        this.keys[key] = true;
+                        this.keys[control.key] = true;
                     });
                     
                     // Touch end
                     btn.addEventListener('touchend', (e) => {
                         e.preventDefault();
-                        this.keys[key] = false;
+                        this.keys[control.key] = false;
+                    });
+                    
+                    // Also handle mouse events for testing
+                    btn.addEventListener('mousedown', (e) => {
+                        e.preventDefault();
+                        this.keys[control.key] = true;
+                    });
+                    
+                    btn.addEventListener('mouseup', (e) => {
+                        e.preventDefault();
+                        this.keys[control.key] = false;
+                    });
+                    
+                    btn.addEventListener('mouseleave', (e) => {
+                        this.keys[control.key] = false;
                     });
                 });
                 
-                // Shoot button
+                // Shoot button - FIXED
                 document.getElementById('shootBtn').addEventListener('touchstart', (e) => {
                     e.preventDefault();
-                    this.shoot(this.canvas.width / 2, this.canvas.height / 2);
+                    if (this.player) {
+                        // Shoot straight ahead
+                        this.shoot(this.player.x + this.player.width, this.player.y + this.player.height / 2);
+                    }
+                });
+                
+                // Also handle mouse for shoot button
+                document.getElementById('shootBtn').addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    if (this.player) {
+                        this.shoot(this.player.x + this.player.width, this.player.y + this.player.height / 2);
+                    }
                 });
             }
             
@@ -295,22 +325,31 @@
             
             shoot(targetX, targetY) {
                 if (this.player) {
-                    console.log('Shooting at:', targetX, targetY);
-                    // Add shooting effect
+                    console.log('Shooting!');
+                    // Add shooting effect at player position
                     this.ctx.fillStyle = '#ffff00';
                     this.ctx.beginPath();
-                    this.ctx.arc(targetX, targetY, 10, 0, Math.PI * 2);
+                    this.ctx.arc(this.player.x + this.player.width/2, this.player.y + this.player.height/2, 8, 0, Math.PI * 2);
                     this.ctx.fill();
                     
+                    // Draw bullet trail
+                    this.ctx.strokeStyle = '#ff9900';
+                    this.ctx.lineWidth = 3;
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(this.player.x + this.player.width/2, this.player.y + this.player.height/2);
+                    this.ctx.lineTo(targetX, targetY);
+                    this.ctx.stroke();
+                    
+                    // Clear after short time
                     setTimeout(() => {
-                        this.ctx.clearRect(targetX-15, targetY-15, 30, 30);
+                        this.render();
                     }, 200);
                 }
             }
             
             update() {
                 if (this.player) {
-                    // Move player based on keys or touch
+                    // Move player based on keys or touch - FIXED DIRECTIONS
                     if (this.keys.w) this.player.y -= this.player.speed;
                     if (this.keys.s) this.player.y += this.player.speed;
                     if (this.keys.a) this.player.x -= this.player.speed;
