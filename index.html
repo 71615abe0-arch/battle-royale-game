@@ -1,10 +1,9 @@
-
-          <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Battle Royale - iPad Fixed</title>
+    <title>Battle Royale - Play Anywhere</title>
     <style>
         * {
             margin: 0;
@@ -14,457 +13,683 @@
         }
         
         body {
-            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            background: linear-gradient(135deg, #0c1f3d, #152642);
             color: white;
             font-family: 'Arial', sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
             overflow: hidden;
+            height: 100vh;
         }
         
         #gameContainer {
-            text-align: center;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 20px;
+            width: 100%;
+            height: 100vh;
+            position: relative;
+        }
+
+        /* Monetization Popups */
+        #premiumPopup, #donationPopup, #adPopup {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.95);
+            padding: 30px;
             border-radius: 15px;
-            border: 2px solid #4cc9f0;
-            box-shadow: 0 0 30px rgba(76, 201, 240, 0.3);
-            max-width: 95vw;
-            max-height: 95vh;
+            border: 3px solid #ff6b35;
+            z-index: 1000;
+            text-align: center;
+            display: none;
+            backdrop-filter: blur(10px);
+        }
+
+        .premium-features {
+            text-align: left;
+            margin: 20px 0;
+        }
+
+        .premium-features li {
+            margin: 10px 0;
+            color: #ffd700;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .purchase-btn {
+            background: linear-gradient(45deg, #ff6b35, #f7931e);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            margin: 10px 5px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .crypto-option {
+            background: linear-gradient(45deg, #f7931e, #ff6b35);
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        /* Menu Screen */
+        #menuScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8));
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            z-index: 100;
         }
         
-        h1 {
-            font-size: 2em;
-            margin-bottom: 15px;
-            background: linear-gradient(45deg, #4cc9f0, #f72585);
+        .game-title {
+            font-size: 3em;
+            font-weight: bold;
+            margin-bottom: 20px;
+            background: linear-gradient(45deg, #ff6b35, #f7931e, #ffd200);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
-        
-        button {
-            background: linear-gradient(45deg, #f72585, #4cc9f0);
+
+        .monetization-buttons {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .monetization-buttons button {
+            background: linear-gradient(45deg, #667eea, #764ba2);
             color: white;
             border: none;
-            padding: 12px 30px;
-            margin: 10px;
-            border-radius: 25px;
+            padding: 10px 20px;
+            border-radius: 20px;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 14px;
+        }
+
+        .character-selection {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px;
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+        
+        .characters-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .character-card {
+            background: rgba(0,0,0,0.5);
+            border: 2px solid transparent;
+            border-radius: 10px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .character-card.selected {
+            border-color: #ff6b35;
+            background: rgba(255, 107, 53, 0.2);
+        }
+        
+        .character-avatar {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border-radius: 50%;
+            margin: 0 auto 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+        
+        .character-name {
+            font-size: 12px;
             font-weight: bold;
         }
         
+        .game-btn {
+            background: linear-gradient(45deg, #ff6b35, #f7931e);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            margin: 10px;
+            border-radius: 25px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .game-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 107, 53, 0.4);
+        }
+        
+        /* Game Screen */
+        #gameScreen {
+            display: none;
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+        
         #gameCanvas {
-            border: 2px solid #4cc9f0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(#87CEEB, #1E90FF);
+        }
+        
+        /* HUD */
+        #hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        
+        .hud-left, .hud-right {
+            background: rgba(0,0,0,0.7);
+            padding: 15px;
             border-radius: 10px;
-            background: #0f172a;
-            margin: 10px 0;
-            max-width: 100%;
-            height: auto;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .health-bar {
+            width: 200px;
+            height: 20px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+            margin: 5px 0;
+            overflow: hidden;
+        }
+        
+        .health-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b35, #f7931e);
+            border-radius: 10px;
+            transition: width 0.3s ease;
         }
         
         /* Touch Controls */
         #touchControls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
             display: none;
-            grid-template-columns: repeat(3, 1fr);
-            grid-template-rows: repeat(3, 1fr);
-            gap: 10px;
-            margin-top: 15px;
-            touch-action: none;
+            justify-content: space-between;
+            align-items: flex-end;
         }
         
-        .touch-btn {
-            background: rgba(76, 201, 240, 0.7);
-            border: 2px solid #4cc9f0;
-            border-radius: 15px;
+        .movement-controls {
+            display: grid;
+            grid-template-columns: repeat(3, 60px);
+            grid-template-rows: repeat(3, 60px);
+            gap: 10px;
+        }
+        
+        .action-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .control-btn {
+            width: 60px;
+            height: 60px;
+            background: rgba(255,255,255,0.2);
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
             color: white;
-            font-size: 24px;
-            font-weight: bold;
-            padding: 20px;
+            backdrop-filter: blur(10px);
             touch-action: none;
             user-select: none;
-            -webkit-user-select: none;
         }
         
-        .touch-btn:active {
-            background: rgba(247, 37, 133, 0.7);
+        .control-btn:active {
+            background: rgba(255, 107, 53, 0.5);
+            transform: scale(0.95);
         }
         
-        #upBtn { grid-column: 2; grid-row: 1; }
-        #leftBtn { grid-column: 1; grid-row: 2; }
-        #downBtn { grid-column: 2; grid-row: 3; }
-        #rightBtn { grid-column: 3; grid-row: 2; }
-        #shootBtn { 
-            grid-column: 3; 
-            grid-row: 1 / span 3; 
+        .shoot-btn {
             background: rgba(255, 0, 0, 0.7);
             border-color: #ff4444;
+            width: 80px;
+            height: 80px;
         }
         
-        .instructions {
-            margin-top: 10px;
-            font-size: 12px;
-            opacity: 0.8;
+        .joystick-area {
+            width: 120px;
+            height: 120px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+            position: relative;
+            touch-action: none;
         }
         
-        #hud {
-            display: none;
+        .joystick {
+            width: 50px;
+            height: 50px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 50%;
             position: absolute;
-            top: 10px;
+            top: 35px;
+            left: 35px;
+            transition: transform 0.1s ease;
+        }
+
+        /* Anti-block Methods */
+        #antiBlockInfo {
+            position: absolute;
+            bottom: 10px;
             left: 10px;
             background: rgba(0,0,0,0.7);
             padding: 10px;
             border-radius: 10px;
-            font-size: 14px;
+            font-size: 12px;
+            display: none;
         }
     </style>
 </head>
 <body>
     <div id="gameContainer">
-        <h1>🎮 Battle Royale</h1>
-        <div class="input-group">
-            <input type="text" id="playerName" placeholder="Enter your name" maxlength="15" 
-                   style="padding: 10px; font-size: 16px; border: 2px solid #4cc9f0; border-radius: 20px; background: rgba(255,255,255,0.1); color: white; text-align: center; width: 200px; margin: 10px;">
+        <!-- Monetization Popups -->
+        <div id="premiumPopup">
+            <button class="close-btn" onclick="closePopup('premiumPopup')">×</button>
+            <h2>🚀 GO PREMIUM!</h2>
+            <div class="premium-features">
+                <li>✅ Exclusive Character Skins</li>
+                <li>✅ Double Coin Earnings</li>
+                <li>✅ No Ads Ever</li>
+                <li>✅ Premium Weapons</li>
+                <li>✅ Priority Matchmaking</li>
+            </div>
+            <button class="purchase-btn" onclick="purchasePremium('monthly')">$4.99/month</button>
+            <button class="purchase-btn" onclick="purchasePremium('yearly')">$49.99/year</button>
+            <div class="crypto-option" onclick="showCryptoPayment()">
+                Pay with Crypto (BTC/ETH)
+            </div>
         </div>
-        <button id="startBtn">Join Battle</button>
-        
-        <div class="server-status">
-            <div>Status: <span id="serverStatus" style="color: #4ade80;">Ready</span></div>
-            <div>Players: <span id="playerCount">0</span></div>
-        </div>
-        
-        <canvas id="gameCanvas" width="800" height="600"></canvas>
-        
-        <!-- Touch Controls for iPad -->
-        <div id="touchControls">
-            <div class="touch-btn" id="upBtn">↑</div>
-            <div class="touch-btn" id="leftBtn">←</div>
-            <div class="touch-btn" id="downBtn">↓</div>
-            <div class="touch-btn" id="rightBtn">→</div>
-            <div class="touch-btn" id="shootBtn">FIRE</div>
-        </div>
-        
-        <div class="instructions">
-            <p>Use touch controls to move and shoot!</p>
-        </div>
-    </div>
 
-    <div id="hud">
-        <div>Health: <span id="health">100</span>%</div>
-        <div>Players: <span id="playersAlive">0</span></div>
-        <div>Zone: <span id="safeZone">100</span>%</div>
+        <div id="donationPopup">
+            <button class="close-btn" onclick="closePopup('donationPopup')">×</button>
+            <h2>❤️ SUPPORT THE DEVELOPER</h2>
+            <p>Help keep the game running and get exclusive rewards!</p>
+            <button class="purchase-btn" onclick="donate(5)">Donate $5</button>
+            <button class="purchase-btn" onclick="donate(10)">Donate $10</button>
+            <button class="purchase-btn" onclick="donate(20)">Donate $20</button>
+            <div class="crypto-option" onclick="showCryptoDonation()">
+                Crypto Donation
+            </div>
+        </div>
+
+        <div id="adPopup">
+            <button class="close-btn" onclick="closePopup('adPopup')">×</button>
+            <h2>🎁 EARN FREE COINS!</h2>
+            <p>Watch a short ad to earn 50 coins</p>
+            <button class="purchase-btn" onclick="watchAd()">Watch Ad (+50 coins)</button>
+            <button class="purchase-btn" onclick="closePopup('adPopup')">Skip</button>
+        </div>
+
+        <!-- Menu Screen -->
+        <div id="menuScreen">
+            <h1 class="game-title">BATTLE ROYALE</h1>
+            
+            <!-- Monetization Buttons -->
+            <div class="monetization-buttons">
+                <button onclick="showPremiumPopup()">💎 Premium</button>
+                <button onclick="showDonationPopup()">❤️ Donate</button>
+                <button onclick="showAdPopup()">🎁 Free Coins</button>
+                <button onclick="showAntiBlockMethods()">🛡️ Unblock Game</button>
+            </div>
+            
+            <div class="character-selection">
+                <h3>SELECT YOUR CHARACTER</h3>
+                <div class="characters-grid">
+                    <div class="character-card selected" data-character="assault">
+                        <div class="character-avatar">🔫</div>
+                        <div class="character-name">ASSAULT</div>
+                    </div>
+                    <div class="character-card" data-character="sniper">
+                        <div class="character-avatar">🎯</div>
+                        <div class="character-name">SNIPER</div>
+                    </div>
+                    <div class="character-card" data-character="medic">
+                        <div class="character-avatar">💊</div>
+                        <div class="character-name">MEDIC</div>
+                    </div>
+                </div>
+            </div>
+            
+            <button class="game-btn" id="startBtn">START MATCH</button>
+            <div style="color: #ccc; font-size: 12px; margin-top: 10px;">
+                Works on Mobile & Computer • Bypass School Blocks
+            </div>
+        </div>
+        
+        <!-- Game Screen -->
+        <div id="gameScreen">
+            <canvas id="gameCanvas"></canvas>
+            
+            <!-- HUD -->
+            <div id="hud">
+                <div class="hud-left">
+                    <div class="player-info">
+                        <div>HEALTH</div>
+                        <div class="health-bar">
+                            <div class="health-fill" style="width: 100%;"></div>
+                        </div>
+                    </div>
+                    <div class="weapon-info">
+                        <div>Coins: <span id="coinCount">0</span></div>
+                    </div>
+                </div>
+                
+                <div class="hud-right">
+                    <div>PLAYERS: <span id="playersAlive">50</span></div>
+                    <div>KILLS: <span id="killCount">0</span></div>
+                </div>
+            </div>
+            
+            <!-- Touch Controls -->
+            <div id="touchControls">
+                <div class="movement-controls">
+                    <div class="joystick-area" id="joystickArea">
+                        <div class="joystick" id="joystick"></div>
+                    </div>
+                </div>
+                
+                <div class="action-controls">
+                    <div class="control-btn shoot-btn" id="shootBtn">🔫</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Anti-block Information -->
+        <div id="antiBlockInfo">
+            <strong>If game is blocked:</strong><br>
+            1. Use mobile data<br>
+            2. Try: game.71615abe0-arch.vercel.app<br>
+            3. Download ZIP from GitHub<br>
+            4. Use VPN<br>
+            <button onclick="closeAntiBlockInfo()" style="margin-top: 5px; padding: 5px;">Close</button>
+        </div>
     </div>
 
     <script>
+        // Monetization System
+        let playerCoins = 0;
+        let isPremium = false;
+
+        function showPremiumPopup() {
+            document.getElementById('premiumPopup').style.display = 'block';
+        }
+
+        function showDonationPopup() {
+            document.getElementById('donationPopup').style.display = 'block';
+        }
+
+        function showAdPopup() {
+            document.getElementById('adPopup').style.display = 'block';
+        }
+
+        function closePopup(popupId) {
+            document.getElementById(popupId).style.display = 'none';
+        }
+
+        function purchasePremium(type) {
+            if (type === 'monthly') {
+                // Simulate payment processing
+                if (confirm('Purchase Premium for $4.99/month?')) {
+                    isPremium = true;
+                    playerCoins += 1000; // Bonus coins
+                    alert('Welcome to Premium! You received 1000 bonus coins!');
+                    closePopup('premiumPopup');
+                }
+            } else {
+                if (confirm('Purchase Premium for $49.99/year?')) {
+                    isPremium = true;
+                    playerCoins += 5000; // More bonus coins
+                    alert('Welcome to Premium! You received 5000 bonus coins!');
+                    closePopup('premiumPopup');
+                }
+            }
+        }
+
+        function donate(amount) {
+            if (confirm(`Donate $${amount} to support the game?`)) {
+                playerCoins += amount * 10; // 10 coins per dollar
+                alert(`Thank you for your donation! You received ${amount * 10} coins!`);
+                closePopup('donationPopup');
+            }
+        }
+
+        function watchAd() {
+            // Simulate ad watching
+            setTimeout(() => {
+                playerCoins += 50;
+                alert('Ad completed! You earned 50 coins!');
+                closePopup('adPopup');
+                updateCoinDisplay();
+            }, 2000);
+        }
+
+        function showCryptoPayment() {
+            alert('Crypto Payment:\nBTC: bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh\nETH: 0x742d35Cc6634C0532925a3b8D...\nSend payment and email receipt to: gamepayments@email.com');
+        }
+
+        function showCryptoDonation() {
+            alert('Crypto Donation:\nBTC: bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh\nETH: 0x742d35Cc6634C0532925a3b8D...\nThank you for your support!');
+        }
+
+        function updateCoinDisplay() {
+            document.getElementById('coinCount').textContent = playerCoins;
+        }
+
+        // Anti-block Methods
+        function showAntiBlockMethods() {
+            document.getElementById('antiBlockInfo').style.display = 'block';
+        }
+
+        function closeAntiBlockInfo() {
+            document.getElementById('antiBlockInfo').style.display = 'none';
+        }
+
+        // Alternative URLs to bypass blocks
+        const alternativeUrls = [
+            'https://71615abe0-arch.github.io/battle-royale-game/',
+            'https://game.71615abe0-arch.vercel.app/',
+            'https://battle-royale-game.71615abe0-arch.repl.co/'
+        ];
+
+        // Game Code
         class BattleRoyaleGame {
             constructor() {
                 this.canvas = document.getElementById('gameCanvas');
                 this.ctx = this.canvas.getContext('2d');
                 this.gameState = 'menu';
-                this.players = [];
-                this.bullets = [];
-                this.safeZone = { x: 400, y: 300, radius: 300 };
-                this.keys = { w: false, a: false, s: false, d: false };
+                this.players = new Map();
                 this.isTouchDevice = 'ontouchstart' in window;
                 
                 this.setupEventListeners();
                 this.setupTouchControls();
-                this.adjustForMobile();
+                this.resizeCanvas();
             }
             
-            adjustForMobile() {
-                // Adjust canvas size for iPad
-                this.canvas.width = Math.min(800, window.innerWidth - 40);
-                this.canvas.height = Math.min(500, window.innerHeight - 200);
-                this.safeZone.x = this.canvas.width / 2;
-                this.safeZone.y = this.canvas.height / 2;
+            resizeCanvas() {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
             }
             
             setupEventListeners() {
-                document.getElementById('startBtn').addEventListener('click', () => {
-                    this.startGame();
+                document.getElementById('startBtn').addEventListener('click', () => this.startGame());
+                
+                // Character selection
+                document.querySelectorAll('.character-card').forEach(card => {
+                    card.addEventListener('click', () => {
+                        document.querySelectorAll('.character-card').forEach(c => c.classList.remove('selected'));
+                        card.classList.add('selected');
+                    });
                 });
                 
-                // Keyboard controls (for desktop)
-                document.addEventListener('keydown', (e) => {
-                    if (this.gameState === 'playing') {
-                        this.handleInput(e.key, true);
-                    }
-                });
+                // Keyboard controls
+                document.addEventListener('keydown', (e) => this.handleKey(e.key, true));
+                document.addEventListener('keyup', (e) => this.handleKey(e.key, false));
                 
-                document.addEventListener('keyup', (e) => {
-                    if (this.gameState === 'playing') {
-                        this.handleInput(e.key, false);
-                    }
-                });
-                
-                // Touch shooting on canvas
-                this.canvas.addEventListener('touchstart', (e) => {
-                    if (this.gameState === 'playing') {
-                        e.preventDefault();
-                        const touch = e.touches[0];
-                        const rect = this.canvas.getBoundingClientRect();
-                        const x = touch.clientX - rect.left;
-                        const y = touch.clientY - rect.top;
-                        this.shootAt(x, y);
-                    }
-                });
+                window.addEventListener('resize', () => this.resizeCanvas());
             }
             
             setupTouchControls() {
-                console.log("Setting up touch controls...");
+                if (!this.isTouchDevice) return;
                 
-                // Movement buttons
-                const upBtn = document.getElementById('upBtn');
-                const leftBtn = document.getElementById('leftBtn');
-                const downBtn = document.getElementById('downBtn');
-                const rightBtn = document.getElementById('rightBtn');
                 const shootBtn = document.getElementById('shootBtn');
-                
-                // Up button
-                upBtn.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    console.log("Up pressed");
-                    this.keys.w = true;
-                });
-                upBtn.addEventListener('touchend', (e) => {
-                    e.preventDefault();
-                    this.keys.w = false;
-                });
-                
-                // Left button
-                leftBtn.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    console.log("Left pressed");
-                    this.keys.a = true;
-                });
-                leftBtn.addEventListener('touchend', (e) => {
-                    e.preventDefault();
-                    this.keys.a = false;
-                });
-                
-                // Down button
-                downBtn.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    console.log("Down pressed");
-                    this.keys.s = true;
-                });
-                downBtn.addEventListener('touchend', (e) => {
-                    e.preventDefault();
-                    this.keys.s = false;
-                });
-                
-                // Right button - FIXED
-                rightBtn.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    console.log("Right pressed");
-                    this.keys.d = true;
-                });
-                rightBtn.addEventListener('touchend', (e) => {
-                    e.preventDefault();
-                    this.keys.d = false;
-                });
-                
-                // Shoot button - FIXED
                 shootBtn.addEventListener('touchstart', (e) => {
                     e.preventDefault();
-                    console.log("Shoot pressed");
-                    this.shootForward();
+                    this.shoot();
                 });
-                
-                // Also add mouse events for testing
-                upBtn.addEventListener('mousedown', () => this.keys.w = true);
-                upBtn.addEventListener('mouseup', () => this.keys.w = false);
-                leftBtn.addEventListener('mousedown', () => this.keys.a = true);
-                leftBtn.addEventListener('mouseup', () => this.keys.a = false);
-                downBtn.addEventListener('mousedown', () => this.keys.s = true);
-                downBtn.addEventListener('mouseup', () => this.keys.s = false);
-                rightBtn.addEventListener('mousedown', () => this.keys.d = true);
-                rightBtn.addEventListener('mouseup', () => this.keys.d = false);
-                shootBtn.addEventListener('mousedown', () => this.shootForward());
             }
             
             startGame() {
-                const playerName = document.getElementById('playerName').value || 'Player';
-                document.getElementById('startBtn').style.display = 'none';
-                document.querySelector('.input-group').style.display = 'none';
-                document.getElementById('hud').style.display = 'block';
+                document.getElementById('menuScreen').style.display = 'none';
+                document.getElementById('gameScreen').style.display = 'block';
                 
-                // Show touch controls on iPad
                 if (this.isTouchDevice) {
-                    document.getElementById('touchControls').style.display = 'grid';
+                    document.getElementById('touchControls').style.display = 'flex';
                 }
                 
                 this.gameState = 'playing';
-                this.createPlayer(playerName);
+                this.createPlayer();
+                this.createBots();
                 this.gameLoop();
+                updateCoinDisplay();
             }
             
-            createPlayer(name) {
-                this.player = {
-                    x: Math.random() * (this.canvas.width - 30),
-                    y: Math.random() * (this.canvas.height - 30),
-                    width: 30,
-                    height: 30,
+            createPlayer() {
+                const player = {
+                    id: 'player',
+                    x: Math.random() * 700 + 50,
+                    y: Math.random() * 500 + 50,
+                    width: 40,
+                    height: 60,
                     speed: 5,
                     health: 100,
                     color: '#4cc9f0',
-                    name: name
+                    kills: 0
                 };
                 
-                // Add bot players
-                for (let i = 0; i < 4; i++) {
-                    this.players.push({
-                        x: Math.random() * (this.canvas.width - 30),
-                        y: Math.random() * (this.canvas.height - 30),
-                        width: 30,
-                        height: 30,
-                        color: '#f72585',
-                        name: 'Bot' + i,
-                        health: 100
-                    });
+                this.players.set('player', player);
+                this.player = player;
+            }
+            
+            createBots() {
+                for (let i = 0; i < 15; i++) {
+                    const bot = {
+                        id: 'bot_' + i,
+                        x: Math.random() * (this.canvas.width - 60),
+                        y: Math.random() * (this.canvas.height - 80),
+                        width: 40,
+                        height: 60,
+                        speed: 3,
+                        health: 100,
+                        color: '#f72585'
+                    };
+                    
+                    this.players.set(bot.id, bot);
                 }
             }
             
-            handleInput(key, isPressed) {
-                const keyMap = {
-                    'w': 'w', 'a': 'a', 's': 's', 'd': 'd',
-                    'ArrowUp': 'w', 'ArrowLeft': 'a', 'ArrowDown': 's', 'ArrowRight': 'd'
-                };
+            handleKey(key, isPressed) {
+                if (!this.player) return;
                 
-                const action = keyMap[key.toLowerCase()];
-                if (action) {
-                    this.keys[action] = isPressed;
+                switch(key.toLowerCase()) {
+                    case 'w':
+                    case 'arrowup':
+                        this.player.movingUp = isPressed;
+                        break;
+                    case 's':
+                    case 'arrowdown':
+                        this.player.movingDown = isPressed;
+                        break;
+                    case 'a':
+                    case 'arrowleft':
+                        this.player.movingLeft = isPressed;
+                        break;
+                    case 'd':
+                    case 'arrowright':
+                        this.player.movingRight = isPressed;
+                        break;
+                    case ' ':
+                        if (isPressed) this.shoot();
+                        break;
                 }
             }
             
-            shootForward() {
-                if (this.player) {
-                    console.log("Shooting forward!");
-                    // Create a bullet that goes right
-                    const bullet = {
-                        x: this.player.x + this.player.width,
-                        y: this.player.y + this.player.height / 2,
-                        width: 10,
-                        height: 5,
-                        speed: 8,
-                        color: '#ffff00'
-                    };
-                    this.bullets.push(bullet);
-                    
-                    // Remove bullet after 2 seconds
-                    setTimeout(() => {
-                        const index = this.bullets.indexOf(bullet);
-                        if (index > -1) {
-                            this.bullets.splice(index, 1);
-                        }
-                    }, 2000);
-                }
-            }
-            
-            shootAt(targetX, targetY) {
-                if (this.player) {
-                    console.log("Shooting at:", targetX, targetY);
-                    // Create a bullet towards the target
-                    const angle = Math.atan2(targetY - (this.player.y + this.player.height/2), 
-                                            targetX - (this.player.x + this.player.width/2));
-                    const bullet = {
-                        x: this.player.x + this.player.width/2,
-                        y: this.player.y + this.player.height/2,
-                        width: 8,
-                        height: 8,
-                        speed: 8,
-                        angle: angle,
-                        color: '#ffff00'
-                    };
-                    this.bullets.push(bullet);
-                    
-                    // Remove bullet after 2 seconds
-                    setTimeout(() => {
-                        const index = this.bullets.indexOf(bullet);
-                        if (index > -1) {
-                            this.bullets.splice(index, 1);
-                        }
-                    }, 2000);
-                }
+            shoot() {
+                if (!this.player) return;
+                
+                // Earn coins for shooting (premium users get more)
+                const coinsEarned = isPremium ? 2 : 1;
+                playerCoins += coinsEarned;
+                updateCoinDisplay();
             }
             
             update() {
-                if (this.player) {
-                    // Move player based on keys or touch
-                    if (this.keys.w) this.player.y -= this.player.speed;
-                    if (this.keys.s) this.player.y += this.player.speed;
-                    if (this.keys.a) this.player.x -= this.player.speed;
-                    if (this.keys.d) this.player.x += this.player.speed;
-                    
-                    // Keep in bounds
-                    this.player.x = Math.max(0, Math.min(this.canvas.width - this.player.width, this.player.x));
-                    this.player.y = Math.max(0, Math.min(this.canvas.height - this.player.height, this.player.y));
-                    
-                    // Update HUD
-                    document.getElementById('health').textContent = this.player.health;
-                    document.getElementById('playersAlive').textContent = this.players.length + 1;
-                    document.getElementById('playerCount').textContent = this.players.length + 1;
-                    
-                    const zonePercent = Math.round((this.safeZone.radius / 300) * 100);
-                    document.getElementById('safeZone').textContent = `${zonePercent}%`;
-                }
+                if (!this.player) return;
                 
-                // Update bullets
-                this.bullets.forEach(bullet => {
-                    if (bullet.angle) {
-                        // Directional bullet
-                        bullet.x += Math.cos(bullet.angle) * bullet.speed;
-                        bullet.y += Math.sin(bullet.angle) * bullet.speed;
-                    } else {
-                        // Forward bullet (right direction)
-                        bullet.x += bullet.speed;
-                    }
-                });
+                // Move player
+                if (this.player.movingUp) this.player.y -= this.player.speed;
+                if (this.player.movingDown) this.player.y += this.player.speed;
+                if (this.player.movingLeft) this.player.x -= this.player.speed;
+                if (this.player.movingRight) this.player.x += this.player.speed;
                 
-                // Remove bullets that are off screen
-                this.bullets = this.bullets.filter(bullet => 
-                    bullet.x < this.canvas.width && bullet.x > 0 && 
-                    bullet.y < this.canvas.height && bullet.y > 0
-                );
+                // Keep player in bounds
+                this.player.x = Math.max(0, Math.min(this.canvas.width - this.player.width, this.player.x));
+                this.player.y = Math.max(0, Math.min(this.canvas.height - this.player.height, this.player.y));
                 
-                // Move bots randomly
-                this.players.forEach(bot => {
-                    if (Math.random() < 0.02) {
-                        bot.x += (Math.random() - 0.5) * 4;
-                        bot.y += (Math.random() - 0.5) * 4;
-                    }
-                    
-                    // Keep bots in bounds
-                    bot.x = Math.max(0, Math.min(this.canvas.width - bot.width, bot.x));
-                    bot.y = Math.max(0, Math.min(this.canvas.height - bot.height, bot.y));
-                });
+                // Update HUD
+                document.getElementById('playersAlive').textContent = this.players.size;
+                document.getElementById('killCount').textContent = this.player.kills;
+                
+                const healthFill = document.querySelector('.health-fill');
+                healthFill.style.width = this.player.health + '%';
             }
             
             render() {
                 // Clear canvas
-                this.ctx.fillStyle = '#0f172a';
+                this.ctx.fillStyle = '#87CEEB';
                 this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
                 
-                // Draw safe zone
-                this.ctx.strokeStyle = 'rgba(76, 201, 240, 0.3)';
-                this.ctx.lineWidth = 3;
-                this.ctx.beginPath();
-                this.ctx.arc(this.safeZone.x, this.safeZone.y, this.safeZone.radius, 0, Math.PI * 2);
-                this.ctx.stroke();
-                
-                // Draw bullets
-                this.bullets.forEach(bullet => {
-                    this.ctx.fillStyle = bullet.color;
-                    this.ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
-                });
-                
                 // Draw players
-                if (this.player) {
-                    this.drawPlayer(this.player);
-                }
-                
                 this.players.forEach(player => {
                     this.drawPlayer(player);
                 });
@@ -477,30 +702,49 @@
                 
                 // Player name
                 this.ctx.fillStyle = 'white';
-                this.ctx.font = '10px Arial';
-                this.ctx.fillText(player.name, player.x, player.y - 5);
+                this.ctx.font = '12px Arial';
+                this.ctx.fillText(player.id === 'player' ? 'YOU' : 'BOT', player.x, player.y - 10);
                 
                 // Health bar
                 this.ctx.fillStyle = 'red';
-                this.ctx.fillRect(player.x, player.y - 8, player.width, 3);
+                this.ctx.fillRect(player.x, player.y - 5, player.width, 3);
                 this.ctx.fillStyle = 'green';
-                this.ctx.fillRect(player.x, player.y - 8, (player.width * player.health) / 100, 3);
+                this.ctx.fillRect(player.x, player.y - 5, (player.width * player.health) / 100, 3);
             }
             
             gameLoop() {
-                this.update();
-                this.render();
-                
                 if (this.gameState === 'playing') {
+                    this.update();
+                    this.render();
                     requestAnimationFrame(() => this.gameLoop());
                 }
             }
         }
         
-        // Start the game when page loads
-        window.addEventListener('load', () => {
-            new BattleRoyaleGame();
-        });
+        // Start the game
+        const game = new BattleRoyaleGame();
+
+        // Auto-detect device and show appropriate controls
+        if (/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+            console.log('Mobile device detected - touch controls enabled');
+        } else {
+            console.log('Desktop device detected - keyboard controls enabled');
+        }
+
+        // Bypass school blocks - try alternative URLs
+        function checkGameAccess() {
+            const testUrls = [
+                'https://71615abe0-arch.github.io/battle-royale-game/',
+                'https://raw.githubusercontent.com/71615abe0-arch/battle-royale-game/main/index.html'
+            ];
+            
+            // If current URL is blocked, suggest alternatives
+            console.log('Game loaded. If blocked, try:');
+            testUrls.forEach(url => console.log(url));
+        }
+
+        // Run on load
+        window.addEventListener('load', checkGameAccess);
     </script>
 </body>
 </html>
