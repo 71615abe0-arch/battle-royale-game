@@ -1,2 +1,398 @@
-# battle-royale-game
-Multiplayer online battle royale game
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Battle Royale - iPad Version</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            touch-action: manipulation;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: white;
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        #gameContainer {
+            text-align: center;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px solid #4cc9f0;
+            box-shadow: 0 0 30px rgba(76, 201, 240, 0.3);
+            max-width: 95vw;
+            max-height: 95vh;
+        }
+        
+        h1 {
+            font-size: 2em;
+            margin-bottom: 15px;
+            background: linear-gradient(45deg, #4cc9f0, #f72585);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        button {
+            background: linear-gradient(45deg, #f72585, #4cc9f0);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            margin: 10px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        #gameCanvas {
+            border: 2px solid #4cc9f0;
+            border-radius: 10px;
+            background: #0f172a;
+            margin: 10px 0;
+            max-width: 100%;
+            height: auto;
+        }
+        
+        /* Touch Controls */
+        #touchControls {
+            display: none;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+            touch-action: none;
+        }
+        
+        .touch-btn {
+            background: rgba(76, 201, 240, 0.7);
+            border: 2px solid #4cc9f0;
+            border-radius: 15px;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            padding: 20px;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        
+        .touch-btn:active {
+            background: rgba(247, 37, 133, 0.7);
+        }
+        
+        #upBtn { grid-column: 2; grid-row: 1; }
+        #leftBtn { grid-column: 1; grid-row: 2; }
+        #downBtn { grid-column: 2; grid-row: 3; }
+        #rightBtn { grid-column: 3; grid-row: 2; }
+        #shootBtn { 
+            grid-column: 3; 
+            grid-row: 1 / span 3; 
+            background: rgba(255, 0, 0, 0.7);
+            border-color: #ff4444;
+        }
+        
+        .instructions {
+            margin-top: 10px;
+            font-size: 12px;
+            opacity: 0.8;
+        }
+        
+        #hud {
+            display: none;
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <h1>🎮 Battle Royale</h1>
+        <div class="input-group">
+            <input type="text" id="playerName" placeholder="Enter your name" maxlength="15" 
+                   style="padding: 10px; font-size: 16px; border: 2px solid #4cc9f0; border-radius: 20px; background: rgba(255,255,255,0.1); color: white; text-align: center; width: 200px; margin: 10px;">
+        </div>
+        <button id="startBtn">Join Battle</button>
+        
+        <div class="server-status">
+            <div>Status: <span id="serverStatus" style="color: #4ade80;">Ready</span></div>
+            <div>Players: <span id="playerCount">0</span></div>
+        </div>
+        
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        
+        <!-- Touch Controls for iPad -->
+        <div id="touchControls">
+            <div class="touch-btn" id="upBtn">↑</div>
+            <div class="touch-btn" id="leftBtn">←</div>
+            <div class="touch-btn" id="downBtn">↓</div>
+            <div class="touch-btn" id="rightBtn">→</div>
+            <div class="touch-btn" id="shootBtn">FIRE</div>
+        </div>
+        
+        <div class="instructions">
+            <p>Use touch controls to move and shoot!</p>
+        </div>
+    </div>
+
+    <div id="hud">
+        <div>Health: <span id="health">100</span>%</div>
+        <div>Players: <span id="playersAlive">0</span></div>
+        <div>Zone: <span id="safeZone">100</span>%</div>
+    </div>
+
+    <script>
+        class BattleRoyaleGame {
+            constructor() {
+                this.canvas = document.getElementById('gameCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.gameState = 'menu';
+                this.players = [];
+                this.safeZone = { x: 400, y: 300, radius: 300 };
+                this.keys = { w: false, a: false, s: false, d: false };
+                this.isTouchDevice = 'ontouchstart' in window;
+                
+                this.setupEventListeners();
+                this.setupTouchControls();
+                this.adjustForMobile();
+            }
+            
+            adjustForMobile() {
+                // Adjust canvas size for iPad
+                this.canvas.width = Math.min(800, window.innerWidth - 40);
+                this.canvas.height = Math.min(500, window.innerHeight - 200);
+                this.safeZone.x = this.canvas.width / 2;
+                this.safeZone.y = this.canvas.height / 2;
+            }
+            
+            setupEventListeners() {
+                document.getElementById('startBtn').addEventListener('click', () => {
+                    this.startGame();
+                });
+                
+                // Keyboard controls (for desktop)
+                document.addEventListener('keydown', (e) => {
+                    if (this.gameState === 'playing') {
+                        this.handleInput(e.key, true);
+                    }
+                });
+                
+                document.addEventListener('keyup', (e) => {
+                    if (this.gameState === 'playing') {
+                        this.handleInput(e.key, false);
+                    }
+                });
+                
+                // Touch shooting
+                this.canvas.addEventListener('touchstart', (e) => {
+                    if (this.gameState === 'playing') {
+                        e.preventDefault();
+                        const touch = e.touches[0];
+                        const rect = this.canvas.getBoundingClientRect();
+                        const x = touch.clientX - rect.left;
+                        const y = touch.clientY - rect.top;
+                        this.shoot(x, y);
+                    }
+                });
+            }
+            
+            setupTouchControls() {
+                const touchButtons = ['upBtn', 'leftBtn', 'downBtn', 'rightBtn'];
+                
+                touchButtons.forEach(btnId => {
+                    const btn = document.getElementById(btnId);
+                    const key = btnId.replace('Btn', '').charAt(0);
+                    
+                    // Touch start
+                    btn.addEventListener('touchstart', (e) => {
+                        e.preventDefault();
+                        this.keys[key] = true;
+                    });
+                    
+                    // Touch end
+                    btn.addEventListener('touchend', (e) => {
+                        e.preventDefault();
+                        this.keys[key] = false;
+                    });
+                });
+                
+                // Shoot button
+                document.getElementById('shootBtn').addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    this.shoot(this.canvas.width / 2, this.canvas.height / 2);
+                });
+            }
+            
+            startGame() {
+                const playerName = document.getElementById('playerName').value || 'Player';
+                document.getElementById('startBtn').style.display = 'none';
+                document.querySelector('.input-group').style.display = 'none';
+                document.getElementById('hud').style.display = 'block';
+                
+                // Show touch controls on iPad
+                if (this.isTouchDevice) {
+                    document.getElementById('touchControls').style.display = 'grid';
+                }
+                
+                this.gameState = 'playing';
+                this.createPlayer(playerName);
+                this.gameLoop();
+            }
+            
+            createPlayer(name) {
+                this.player = {
+                    x: Math.random() * (this.canvas.width - 30),
+                    y: Math.random() * (this.canvas.height - 30),
+                    width: 30,
+                    height: 30,
+                    speed: 5,
+                    health: 100,
+                    color: '#4cc9f0',
+                    name: name
+                };
+                
+                // Add bot players
+                for (let i = 0; i < 4; i++) {
+                    this.players.push({
+                        x: Math.random() * (this.canvas.width - 30),
+                        y: Math.random() * (this.canvas.height - 30),
+                        width: 30,
+                        height: 30,
+                        color: '#f72585',
+                        name: 'Bot' + i,
+                        health: 100
+                    });
+                }
+            }
+            
+            handleInput(key, isPressed) {
+                const keyMap = {
+                    'w': 'w', 'a': 'a', 's': 's', 'd': 'd',
+                    'ArrowUp': 'w', 'ArrowLeft': 'a', 'ArrowDown': 's', 'ArrowRight': 'd'
+                };
+                
+                const action = keyMap[key.toLowerCase()];
+                if (action) {
+                    this.keys[action] = isPressed;
+                }
+            }
+            
+            shoot(targetX, targetY) {
+                if (this.player) {
+                    console.log('Shooting at:', targetX, targetY);
+                    // Add shooting effect
+                    this.ctx.fillStyle = '#ffff00';
+                    this.ctx.beginPath();
+                    this.ctx.arc(targetX, targetY, 10, 0, Math.PI * 2);
+                    this.ctx.fill();
+                    
+                    setTimeout(() => {
+                        this.ctx.clearRect(targetX-15, targetY-15, 30, 30);
+                    }, 200);
+                }
+            }
+            
+            update() {
+                if (this.player) {
+                    // Move player based on keys or touch
+                    if (this.keys.w) this.player.y -= this.player.speed;
+                    if (this.keys.s) this.player.y += this.player.speed;
+                    if (this.keys.a) this.player.x -= this.player.speed;
+                    if (this.keys.d) this.player.x += this.player.speed;
+                    
+                    // Keep in bounds
+                    this.player.x = Math.max(0, Math.min(this.canvas.width - this.player.width, this.player.x));
+                    this.player.y = Math.max(0, Math.min(this.canvas.height - this.player.height, this.player.y));
+                    
+                    // Update HUD
+                    document.getElementById('health').textContent = this.player.health;
+                    document.getElementById('playersAlive').textContent = this.players.length + 1;
+                    document.getElementById('playerCount').textContent = this.players.length + 1;
+                    
+                    const zonePercent = Math.round((this.safeZone.radius / 300) * 100);
+                    document.getElementById('safeZone').textContent = `${zonePercent}%`;
+                }
+                
+                // Move bots randomly
+                this.players.forEach(bot => {
+                    if (Math.random() < 0.02) {
+                        bot.x += (Math.random() - 0.5) * 4;
+                        bot.y += (Math.random() - 0.5) * 4;
+                    }
+                    
+                    // Keep bots in bounds
+                    bot.x = Math.max(0, Math.min(this.canvas.width - bot.width, bot.x));
+                    bot.y = Math.max(0, Math.min(this.canvas.height - bot.height, bot.y));
+                });
+            }
+            
+            render() {
+                // Clear canvas
+                this.ctx.fillStyle = '#0f172a';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Draw safe zone
+                this.ctx.strokeStyle = 'rgba(76, 201, 240, 0.3)';
+                this.ctx.lineWidth = 3;
+                this.ctx.beginPath();
+                this.ctx.arc(this.safeZone.x, this.safeZone.y, this.safeZone.radius, 0, Math.PI * 2);
+                this.ctx.stroke();
+                
+                // Draw players
+                if (this.player) {
+                    this.drawPlayer(this.player);
+                }
+                
+                this.players.forEach(player => {
+                    this.drawPlayer(player);
+                });
+            }
+            
+            drawPlayer(player) {
+                // Player body
+                this.ctx.fillStyle = player.color;
+                this.ctx.fillRect(player.x, player.y, player.width, player.height);
+                
+                // Player name
+                this.ctx.fillStyle = 'white';
+                this.ctx.font = '10px Arial';
+                this.ctx.fillText(player.name, player.x, player.y - 5);
+                
+                // Health bar
+                this.ctx.fillStyle = 'red';
+                this.ctx.fillRect(player.x, player.y - 8, player.width, 3);
+                this.ctx.fillStyle = 'green';
+                this.ctx.fillRect(player.x, player.y - 8, (player.width * player.health) / 100, 3);
+            }
+            
+            gameLoop() {
+                this.update();
+                this.render();
+                
+                if (this.gameState === 'playing') {
+                    requestAnimationFrame(() => this.gameLoop());
+                }
+            }
+        }
+        
+        // Start the game when page loads
+        window.addEventListener('load', () => {
+            new BattleRoyaleGame();
+        });
+    </script>
+</body>
+</html>
