@@ -1,279 +1,46 @@
-
-               <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Battle Grounds - Survival Game</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; touch-action: manipulation; }
-        body { background: #0a0a0a; color: white; font-family: Arial; overflow: hidden; }
-        #gameContainer { width: 100vw; height: 100vh; position: relative; }
-        
-        /* Loading Screen */
-        #loadingScreen {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(135deg, #1a1a2e, #16213e);
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            z-index: 1000;
-        }
-        .logo { font-size: 3em; font-weight: bold; color: #ff6b35; margin-bottom: 20px; }
-        .loading-bar { width: 300px; height: 20px; background: rgba(255,255,255,0.2); border-radius: 10px; overflow: hidden; }
-        .loading-progress { height: 100%; background: #ff6b35; border-radius: 10px; width: 0%; }
-        
-        /* Main Menu */
-        #mainMenu {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8));
-            display: none; flex-direction: column; justify-content: center; align-items: center;
-            z-index: 900;
-        }
-        .menu-title { font-size: 3em; color: #ffd700; margin-bottom: 30px; }
-        .menu-btn { 
-            background: #ff6b35; color: white; border: none; padding: 15px 40px; 
-            margin: 10px; border-radius: 25px; font-size: 1.2em; cursor: pointer;
-            width: 200px;
-        }
-        
-        /* Game Screen */
-        #gameScreen { display: none; width: 100%; height: 100%; position: relative; }
-        #gameCanvas { width: 100%; height: 100%; background: #87CEEB; }
-        
-        /* HUD */
-        #gameHUD {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none;
-        }
-        .hud-top { position: absolute; top: 20px; left: 20px; right: 20px; display: flex; justify-content: space-between; }
-        .hud-panel { background: rgba(0,0,0,0.7); padding: 10px; border-radius: 10px; }
-        .health-bar, .armor-bar { width: 200px; height: 15px; background: #333; border-radius: 7px; margin: 5px 0; overflow: hidden; }
-        .health-fill { height: 100%; background: #e74c3c; border-radius: 7px; }
-        .armor-fill { height: 100%; background: #3498db; border-radius: 7px; }
-        
-        /* Touch Controls */
-        #touchControls {
-            position: absolute; bottom: 20px; left: 20px; right: 20px;
-            display: none; justify-content: space-between; align-items: flex-end;
-        }
-        .control-btn {
-            width: 70px; height: 70px; background: rgba(255,255,255,0.3);
-            border: 2px solid rgba(255,255,255,0.5); border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 24px; pointer-events: auto;
-        }
-        .shoot-btn { width: 90px; height: 90px; background: rgba(255,0,0,0.6); }
-    </style>
+    <title>Free Fire Clone</title>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <div id="gameContainer">
-        <!-- Loading Screen -->
-        <div id="loadingScreen">
-            <div class="logo">BATTLE GROUNDS</div>
-            <div class="loading-bar"><div class="loading-progress"></div></div>
-            <div>Loading...</div>
+        <div id="hud">
+            <div id="healthBar">
+                <div id="healthFill"></div>
+            </div>
+            <div id="ammoCount">Ammo: 30/90</div>
+            <div id="score">Score: 0</div>
+            <div id="weaponInfo">Weapon: AK47</div>
         </div>
-        
-        <!-- Main Menu -->
-        <div id="mainMenu">
-            <h1 class="menu-title">BATTLE GROUNDS</h1>
-            <button class="menu-btn" onclick="startGame('solo')">SOLO MATCH</button>
-            <button class="menu-btn" onclick="startGame('duo')">DUO MODE</button>
-            <button class="menu-btn" onclick="startGame('squad')">SQUAD</button>
-            <div style="margin-top: 20px; color: #ccc;">
-                <p>52 Players | Bermuda Map | Battle Royale</p>
+        <div id="crosshair">+</div>
+        <div id="startScreen">
+            <h1>FREE FIRE CLONE</h1>
+            <button id="startBtn">START GAME</button>
+            <div id="controls">
+                <h3>Controls:</h3>
+                <p>WASD - Move</p>
+                <p>Mouse - Aim</p>
+                <p>Left Click - Shoot</p>
+                <p>R - Reload</p>
+                <p>1-3 - Switch Weapons</p>
             </div>
         </div>
-        
-        <!-- Game Screen -->
-        <div id="gameScreen">
-            <canvas id="gameCanvas"></canvas>
-            
-            <!-- HUD -->
-            <div id="gameHUD">
-                <div class="hud-top">
-                    <div class="hud-panel">
-                        <div>HEALTH</div>
-                        <div class="health-bar"><div class="health-fill" style="width: 100%"></div></div>
-                        <div>ARMOR</div>
-                        <div class="armor-bar"><div class="armor-fill" style="width: 100%"></div></div>
-                    </div>
-                    <div class="hud-panel">
-                        <div>PLAYERS: <span id="playerCount">52</span></div>
-                        <div>KILLS: <span id="killCount">0</span></div>
-                        <div>ZONE: <span id="zoneTimer">04:30</span></div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Touch Controls -->
-            <div id="touchControls">
-                <div style="display: flex; gap: 15px;">
-                    <div class="control-btn">⬆️</div>
-                    <div style="display: grid; grid-template-columns: repeat(3, 70px); gap: 5px;">
-                        <div class="control-btn">⬅️</div>
-                        <div class="control-btn">⬇️</div>
-                        <div class="control-btn">➡️</div>
-                    </div>
-                </div>
-                <div class="control-btn shoot-btn">🔫</div>
-            </div>
+        <div id="gameOverScreen" style="display: none;">
+            <h1>GAME OVER</h1>
+            <p id="finalScore">Score: 0</p>
+            <button id="restartBtn">PLAY AGAIN</button>
         </div>
     </div>
 
-    <script>
-        // Game Loading
-        function simulateLoading() {
-            const progress = document.querySelector('.loading-progress');
-            let width = 0;
-            
-            const interval = setInterval(() => {
-                width += 2;
-                progress.style.width = width + '%';
-                
-                if (width >= 100) {
-                    clearInterval(interval);
-                    setTimeout(() => {
-                        document.getElementById('loadingScreen').style.display = 'none';
-                        document.getElementById('mainMenu').style.display = 'flex';
-                    }, 500);
-                }
-            }, 50);
-        }
-
-        // Start Game
-        function startGame(mode) {
-            document.getElementById('mainMenu').style.display = 'none';
-            document.getElementById('gameScreen').style.display = 'block';
-            
-            if ('ontouchstart' in window) {
-                document.getElementById('touchControls').style.display = 'flex';
-            }
-            
-            initializeGame(mode);
-        }
-
-        // Game Engine
-        function initializeGame(mode) {
-            const canvas = document.getElementById('gameCanvas');
-            const ctx = canvas.getContext('2d');
-            
-            // Set canvas size
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            
-            // Game state
-            const gameState = {
-                players: [],
-                bullets: [],
-                zone: { radius: 500, x: canvas.width/2, y: canvas.height/2 },
-                time: 270 // 4:30 minutes
-            };
-            
-            // Create player
-            const player = {
-                x: Math.random() * (canvas.width - 50),
-                y: Math.random() * (canvas.height - 70),
-                width: 40,
-                height: 60,
-                health: 100,
-                armor: 100,
-                speed: 5,
-                kills: 0
-            };
-            
-            // Create bots
-            for (let i = 0; i < 20; i++) {
-                gameState.players.push({
-                    x: Math.random() * (canvas.width - 50),
-                    y: Math.random() * (canvas.height - 70),
-                    width: 40,
-                    height: 60,
-                    health: 100,
-                    armor: Math.random() > 0.5 ? 100 : 0,
-                    speed: 3,
-                    isBot: true
-                });
-            }
-            
-            // Controls
-            const keys = {};
-            document.addEventListener('keydown', (e) => keys[e.key] = true);
-            document.addEventListener('keyup', (e) => keys[e.key] = false);
-            
-            // Game loop
-            function gameLoop() {
-                update();
-                render();
-                requestAnimationFrame(gameLoop);
-            }
-            
-            function update() {
-                // Move player
-                if (keys['w'] || keys['ArrowUp']) player.y -= player.speed;
-                if (keys['s'] || keys['ArrowDown']) player.y += player.speed;
-                if (keys['a'] || keys['ArrowLeft']) player.x -= player.speed;
-                if (keys['d'] || keys['ArrowRight']) player.x += player.speed;
-                
-                // Update HUD
-                document.getElementById('playerCount').textContent = gameState.players.length + 1;
-                document.getElementById('killCount').textContent = player.kills;
-                
-                // Update zone timer
-                gameState.time--;
-                const minutes = Math.floor(gameState.time / 60);
-                const seconds = gameState.time % 60;
-                document.getElementById('zoneTimer').textContent = 
-                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-            }
-            
-            function render() {
-                // Clear canvas
-                ctx.fillStyle = '#87CEEB';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                
-                // Draw ground
-                ctx.fillStyle = '#228B22';
-                ctx.fillRect(0, canvas.height - 100, canvas.width, 100);
-                
-                // Draw safe zone
-                ctx.strokeStyle = 'rgba(0, 255, 0, 0.3)';
-                ctx.lineWidth = 3;
-                ctx.beginPath();
-                ctx.arc(gameState.zone.x, gameState.zone.y, gameState.zone.radius, 0, Math.PI * 2);
-                ctx.stroke();
-                
-                // Draw players
-                drawPlayer(player, true);
-                gameState.players.forEach(p => drawPlayer(p, false));
-            }
-            
-            function drawPlayer(p, isPlayer) {
-                // Body
-                ctx.fillStyle = isPlayer ? '#e74c3c' : '#3498db';
-                ctx.fillRect(p.x, p.y, p.width, p.height);
-                
-                // Head
-                ctx.fillStyle = '#f1c40f';
-                ctx.fillRect(p.x + 10, p.y - 10, 20, 20);
-                
-                // Name/Health
-                ctx.fillStyle = 'white';
-                ctx.font = '12px Arial';
-                ctx.fillText(isPlayer ? 'YOU' : 'ENEMY', p.x, p.y - 15);
-                
-                // Health bar
-                ctx.fillStyle = 'red';
-                ctx.fillRect(p.x, p.y - 5, p.width, 3);
-                ctx.fillStyle = 'green';
-                ctx.fillRect(p.x, p.y - 5, (p.width * p.health) / 100, 3);
-            }
-            
-            // Start the game
-            gameLoop();
-        }
-
-        // Start loading when page loads
-        window.addEventListener('load', simulateLoading);
-    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/weapons.js"></script>
+    <script src="js/enemy.js"></script>
+    <script src="js/player.js"></script>
+    <script src="js/game.js"></script>
 </body>
 </html>
